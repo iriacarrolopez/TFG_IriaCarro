@@ -6,23 +6,23 @@ from fastapi import FastAPI, File, Request, Form, Response, UploadFile
 from pydantic import BaseModel, Field
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import uuid, datetime
-import pandas as pd
+# import pandas as pd
 from requests.auth import HTTPBasicAuth
 
-csv_file_path = "housing.csv"
+# csv_file_path = "housing.csv"
 
-# Función para cargar y limpiar los datos del CSV con Pandas
-def limpieza_dataset(file_path):
-    # Leer el CSV en un DataFrame de Pandas
-    df = pd.read_csv(file_path)
+# # Función para cargar y limpiar los datos del CSV con Pandas
+# def limpieza_dataset(file_path):
+#     # Leer el CSV en un DataFrame de Pandas
+#     df = pd.read_csv(file_path)
     
-    # Aquí puedes realizar cualquier limpieza necesaria en los datos del DataFrame
-    df = df.dropna()
+#     # Aquí puedes realizar cualquier limpieza necesaria en los datos del DataFrame
+#     df = df.dropna()
     
-    return df
+#     return df
 
-# Cargar y limpiar los datos del CSV
-cleaned_csv_data = limpieza_dataset(csv_file_path)
+# # Cargar y limpiar los datos del CSV
+# cleaned_csv_data = limpieza_dataset(csv_file_path)
 
 app = FastAPI()
 
@@ -270,7 +270,7 @@ Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n"
                 "ids": "https://w3id.org/idsa/core/",
                 "idsc": "https://w3id.org/idsa/code/"
             },
-            "@type": "iids:MessageProcessedNotificationMessage",
+            "@type": "ids:MessageProcessedNotificationMessage",
             "@id": "https://w3id.org/idsa/autogen/messageProcessedNotificationMessage/" + id_aleatorio,
             "ids:modelVersion": mensaje["ids:modelVersion"],
             "ids:correlationMessage":{
@@ -317,6 +317,8 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
         )
 
         response = Response(content=encoder.to_string(), media_type=encoder.content_type)
+
+        print(response.body)
 
         return response
     
