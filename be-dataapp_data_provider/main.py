@@ -6,25 +6,53 @@ from fastapi import FastAPI, File, Request, Form, Response, UploadFile
 from pydantic import BaseModel, Field
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import uuid, datetime
-# import pandas as pd
 from requests.auth import HTTPBasicAuth
-
-# csv_file_path = "housing.csv"
-
-# # Función para cargar y limpiar los datos del CSV con Pandas
-# def limpieza_dataset(file_path):
-#     # Leer el CSV en un DataFrame de Pandas
-#     df = pd.read_csv(file_path)
-    
-#     # Aquí puedes realizar cualquier limpieza necesaria en los datos del DataFrame
-#     df = df.dropna()
-    
-#     return df
-
-# # Cargar y limpiar los datos del CSV
-# cleaned_csv_data = limpieza_dataset(csv_file_path)
+from analitica import *
 
 app = FastAPI()
+
+csv_file_path = "C:/Users/IRIA/Desktop/true-connector/be-dataapp_data_provider/housing.csv"
+
+@app.get("/logistic_regression")
+async def logistic_regression():
+
+    X_train, y_train, test = preprocess_data(csv_file_path)
+    
+    log_reg = logistic_regression_california_housing(X_train, y_train, max_iter=100)
+
+    return {"Logistic regression: ": log_reg}
+
+@app.get("/linear_regression")
+async def linear_regression():
+    X_train, y_train, test = preprocess_data(csv_file_path)
+
+    reg, error = train_linear_regression_and_evaluate(X_train, y_train)
+
+    return {"reg": reg, "error": error}
+
+@app.get("/decision_tree_regressor")
+async def decision_tree_regressor():
+    X_train, y_train, test = preprocess_data(csv_file_path)
+
+    return train_and_evaluate_models(X_train, y_train, cv=10)
+
+@app.get("/random_forest_regressor")
+async def random_forest_regressor():
+    X_train, y_train, test = preprocess_data(csv_file_path)
+
+    forest_reg, forest_rmse = train_random_forest_and_evaluate(X_train, y_train, cv=10)
+
+    return {"Forest reg": forest_reg, "Forest_rmse": forest_rmse}
+
+@app.get("/grid_search")
+async def grid_search():
+    # Llamar a la función para preparar los datos
+    X_train, y_train, test = preprocess_data(csv_file_path)
+    
+    # Llamar a la función para entrenar el modelo
+    best_params, best_model = preprocess_pipeline(X_train, y_train)
+
+    return {"best_params": best_params, "best_model": str(best_model)}
 
 @app.get("/proxy")
 def proxy(request: Request):
