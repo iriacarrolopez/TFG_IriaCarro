@@ -31,7 +31,11 @@ def preprocess_data(csv_file_path):
     df = pd.read_csv(csv_file_path)
     
     # Eliminar filas con valores nulos
-    cleaned_df = df.dropna()
+    cleaned_df = df.dropna().copy()
+
+    # Eliminar la columna 'ocean_proximity' si existe
+    if 'ocean_proximity' in cleaned_df.columns:
+        cleaned_df = cleaned_df.drop(columns='ocean_proximity')
 
     # Añadir la columna 'income_category'
     cleaned_df['income_category'] = pd.cut(cleaned_df['median_income'], bins=[0, 1.5, 3, 4.5, 6, np.inf], labels=[1, 2, 3, 4, 5])
@@ -43,13 +47,12 @@ def preprocess_data(csv_file_path):
     copy_train = train.copy()
 
     # Separar características y etiquetas de entrenamiento
-    X_train = copy_train.drop(columns='median_house_value')
+    X_train = copy_train.drop(columns=['median_house_value', 'income_category'])
     y_train = copy_train['median_house_value'].copy()
 
     return X_train, y_train, test
 
-X_train, y_train, test = preprocess_data(csv_file_path)
-
+# Pipeline de preprocesamiento
 def preprocess_pipeline(X_train):
     rooms_ix, bedrooms_ix, population_ix, households_ix = 3, 4, 5, 6
 
@@ -77,10 +80,12 @@ def preprocess_pipeline(X_train):
                 population_per_household = X[:, population_ix] / X[:, households_ix]
                 population_per_household = np.log(population_per_household + 1)
                 X = np.c_[X, population_per_household]
-                X[:, rooms_ix] = np.log(X[:, rooms_ix] + 1)
-                X[:, bedrooms_ix] = np.log(X[:, bedrooms_ix] + 1)
-                X[:, population_ix] = np.log(X[:, population_ix] + 1)
-                X[:, households_ix] = np.log(X[:, households_ix] + 1)
+            
+            # Log transform selected features
+            X[:, rooms_ix] = np.log(X[:, rooms_ix] + 1)
+            X[:, bedrooms_ix] = np.log(X[:, bedrooms_ix] + 1)
+            X[:, population_ix] = np.log(X[:, population_ix] + 1)
+            X[:, households_ix] = np.log(X[:, households_ix] + 1)
                 
             return X
 
@@ -91,16 +96,23 @@ def preprocess_pipeline(X_train):
     ])
 
     num_attribs = X_train.select_dtypes(include=['int64', 'float64']).columns.tolist()
-    cat_attribs = ['ocean_proximity']
 
     full_pipeline = ColumnTransformer([
-        ('num', num_pipeline, num_attribs),
-        ('cat', OneHotEncoder(), cat_attribs)
+        ('num', num_pipeline, num_attribs)
     ])
 
     return full_pipeline.fit_transform(X_train)
 
-processed_X_train=preprocess_pipeline(X_train)
+# Función para entrenar y evaluar un modelo de regresión lineal
+def train_linear_regression_and_evaluate(X_train, y_train):
+    reg = LinearRegression()
+    reg.fit(X_train, y_train)
+    y_pred = reg.predict(X_train)
+    error = np.mean((y_pred - y_train) ** 2)
+    return reg, error
+
+X_train, y_train, test = preprocess_data(csv_file_path)
+processed_X_train = preprocess_pipeline(X_train)
 
 # REGRESIÓN LOGISTICA
 def logistic_regression_california_housing(X_train, y_train, max_iter=100):
@@ -141,10 +153,11 @@ def train_and_evaluate_models(X_train, y_train, cv=10):
     print("Error RMSE promedio del árbol de decisión:", tree_rmse_scores.mean())
     
     # Entrenamiento del modelo LinearRegression
-    lin_reg = LinearRegression()
-    lin_reg_scores = cross_val_score(lin_reg, X_train, y_train, scoring='neg_mean_squared_error', cv=cv)
-    lin_rmse_scores = np.sqrt(-lin_reg_scores)
-    print("Error RMSE promedio de la regresión lineal:", lin_rmse_scores.mean())
+    # lin_reg = LinearRegression()
+    # lin_reg_scores = cross_val_score(lin_reg, X_train, y_train, scoring='neg_mean_squared_error', cv=cv)
+    # lin_rmse_scores = np.sqrt(-lin_reg_scores)
+    # print("Error RMSE promedio de la regresión lineal:", lin_rmse_scores.mean())
+    
 
 # RANDOM FOREST REGRESSOR
 def train_random_forest_and_evaluate(X_train, y_train, cv=10):
@@ -159,6 +172,7 @@ def train_random_forest_and_evaluate(X_train, y_train, cv=10):
     forest_rmse = np.sqrt(-forest_reg_scores.mean())
     
     return forest_reg, forest_rmse
+
 
 # GRID SEARCH CV
 def train_model_with_grid_search(X_train, y_train, test_size=0.2):

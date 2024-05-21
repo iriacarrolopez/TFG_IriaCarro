@@ -13,7 +13,7 @@ app = FastAPI()
 
 csv_file_path = "C:/Users/IRIA/Desktop/true-connector/be-dataapp_data_provider/housing.csv"
 
-@app.get("/logistic_regression")
+@app.get("/logisticRegression")
 async def logistic_regression():
 
     X_train, y_train, test = preprocess_data(csv_file_path)
@@ -22,7 +22,7 @@ async def logistic_regression():
 
     return {"Logistic regression: ": log_reg}
 
-@app.get("/linear_regression")
+@app.get("/linearRegression")
 async def linear_regression():
     X_train, y_train, test = preprocess_data(csv_file_path)
 
@@ -30,13 +30,13 @@ async def linear_regression():
 
     return {"reg": reg, "error": error}
 
-@app.get("/decision_tree_regressor")
+@app.get("/decisionTreeRegressor")
 async def decision_tree_regressor():
     X_train, y_train, test = preprocess_data(csv_file_path)
 
     return train_and_evaluate_models(X_train, y_train, cv=10)
 
-@app.get("/random_forest_regressor")
+@app.get("/randomForestRegressor")
 async def random_forest_regressor():
     X_train, y_train, test = preprocess_data(csv_file_path)
 
@@ -44,7 +44,7 @@ async def random_forest_regressor():
 
     return {"Forest reg": forest_reg, "Forest_rmse": forest_rmse}
 
-@app.get("/grid_search")
+@app.get("/gridSearch")
 async def grid_search():
     # Llamar a la función para preparar los datos
     X_train, y_train, test = preprocess_data(csv_file_path)
@@ -364,6 +364,9 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
 
         id_aleatorio = str(uuid.uuid4())
 
+        # if metodo == "decisionTree":
+        #     decisionTree(parametros)
+
         diccionario = {
             "@context":{
                 "ids": "https://w3id.org/idsa/core/",
@@ -426,55 +429,6 @@ Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n"
     
 
     return {"processed_data": header}
-
-# @app.post("/data")
-# async def data(request: Request):
-
-#     print(request.headers)
-    
-#     # Lee el contenido de la solicitud como bytes
-#     contenido = await request.body()
-    
-#     print(contenido)
-
-#     # Decodifica el contenido como JSON
-#     datos_json = json.loads(contenido)
-    
-#     # Valida y convierte los datos JSON en un objeto DataModel
-#     datos_modelo = DataModel(**datos_json)
-
-
-#     if datos_modelo.type == "ids:DescriptionRequestMessage":
-        
-#         if(datos_modelo.requestedElement is not None):
-
-#             return requests.get("https://ecc-provider:8449/api/offeredResource/" + datos_modelo.requestedElement)
-
-#         else:
-#             respuesta = requests.get("https://ecc-provider:8449/")
-
-#             print("Respuesta: " + respuesta)
-
-#             print(respuesta.text)
-
-#             return respuesta.json()
-
-#     elif datos_modelo.type == "ids:ContractRequestMessage":
-
-#         return {"mensaje": "Es una petición de contrato"}
-
-#     elif datos_modelo.type == "ids:ContractAgreementMessage":
-
-#         return {"mensaje": "Acuerdo de contrato"}
-    
-#     elif datos_modelo.type == "ids:ArtifactRequestMessage":
-
-#         return {"mensaje": "Es un ArtifactRequestMessage"}
-
-
-#     print("tipo: " + datos_modelo.type)
-
-#     return {"message": "Received the request successfully"}
 
 
 @app.get("/data")
