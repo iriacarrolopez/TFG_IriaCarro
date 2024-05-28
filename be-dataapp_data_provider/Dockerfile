@@ -1,6 +1,6 @@
 FROM python:3
 
-RUN pip install fastapi    uvicorn[standard]    requests    python-multipart    requests_toolbelt   pandas  scikit-learn
+RUN pip install fastapi    uvicorn[standard]    requests    python-multipart    requests_toolbelt   pandas  scikit-learn    
 RUN mkdir /source
 ADD main.py /source
 ADD housing.csv /source

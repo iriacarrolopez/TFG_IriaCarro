@@ -6,6 +6,7 @@ from fastapi import FastAPI, File, Request, Form, Response, UploadFile
 from pydantic import BaseModel, Field
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import uuid, datetime
+from urllib.parse import urlparse, parse_qs
 from requests.auth import HTTPBasicAuth
 from analitica import *
 
@@ -13,51 +14,51 @@ app = FastAPI()
 
 csv_file_path = "C:/Users/IRIA/Desktop/true-connector/be-dataapp_data_provider/housing.csv"
 
-@app.get("/logisticRegression")
-async def logistic_regression():
+# @app.get("/logisticRegression")
+# async def logistic_regression():
 
-    X_train, y_train, test = preprocess_data(csv_file_path)
+#     X_train, y_train, test = preprocess_data(csv_file_path)
     
-    log_reg = logistic_regression_california_housing(X_train, y_train, max_iter=100)
+#     log_reg = logistic_regression_california_housing(X_train, y_train, max_iter=100)
 
-    return {"Logistic regression: ": log_reg}
+#     return {"Logistic regression: ": log_reg}
 
-@app.get("/linearRegression")
-async def linear_regression():
-    X_train, y_train, test = preprocess_data(csv_file_path)
+# @app.get("/linearRegression")
+# async def linear_regression():
+#     X_train, y_train, test = preprocess_data(csv_file_path)
 
-    reg, error = train_linear_regression_and_evaluate(X_train, y_train)
+#     reg, error = train_linear_regression_and_evaluate(X_train, y_train)
 
-    return {"reg": reg, "error": error}
+#     return {"reg": reg, "error": error}
 
-@app.get("/decisionTreeRegressor")
-async def decision_tree_regressor():
-    X_train, y_train, test = preprocess_data(csv_file_path)
+# @app.get("/decisionTreeRegressor")
+# async def decision_tree_regressor():
+#     X_train, y_train, test = preprocess_data(csv_file_path)
 
-    return train_and_evaluate_models(X_train, y_train, cv=10)
+#     return train_and_evaluate_models(X_train, y_train, cv=10)
 
-@app.get("/randomForestRegressor")
-async def random_forest_regressor():
-    X_train, y_train, test = preprocess_data(csv_file_path)
+# @app.get("/randomForestRegressor")
+# async def random_forest_regressor():
+#     X_train, y_train, test = preprocess_data(csv_file_path)
 
-    forest_reg, forest_rmse = train_random_forest_and_evaluate(X_train, y_train, cv=10)
+#     forest_reg, forest_rmse = train_random_forest_and_evaluate(X_train, y_train, cv=10)
 
-    return {"Forest reg": forest_reg, "Forest_rmse": forest_rmse}
+#     return {"Forest reg": forest_reg, "Forest_rmse": forest_rmse}
 
-@app.get("/gridSearch")
-async def grid_search():
-    # Llamar a la función para preparar los datos
-    X_train, y_train, test = preprocess_data(csv_file_path)
+# @app.get("/gridSearch")
+# async def grid_search():
+#     # Llamar a la función para preparar los datos
+#     X_train, y_train, test = preprocess_data(csv_file_path)
     
-    # Llamar a la función para entrenar el modelo
-    best_params, best_model = preprocess_pipeline(X_train, y_train)
+#     # Llamar a la función para entrenar el modelo
+#     best_params, best_model = preprocess_pipeline(X_train, y_train)
 
-    return {"best_params": best_params, "best_model": str(best_model)}
+#     return {"best_params": best_params, "best_model": str(best_model)}
 
-@app.get("/proxy")
-def proxy(request: Request):
-    print(request)
-    return {"Hello": "World"}
+# @app.get("/proxy")
+# def proxy(request: Request):
+#     print(request)
+#     return {"Hello": "World"}
 
 
 @app.post("/data")
@@ -364,8 +365,71 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
 
         id_aleatorio = str(uuid.uuid4())
 
-        # if metodo == "decisionTree":
-        #     decisionTree(parametros)
+        url = mensaje["ids:requestedArtifact"]["@id"]
+
+        # Parsear la URL
+        parsed_url = urlparse(url)
+
+        # Obtener la parte del path y extraer el valor en la posición 'gridSearch'
+        path_segments = parsed_url.path.split('/')
+        metodo = path_segments[3]
+
+        # Parsear los parámetros de la query string en un diccionario
+        query_params = parse_qs(parsed_url.query)
+        parametros = {key: value[0] for key, value in query_params.items()}
+
+        if metodo == "logisticRegression":
+
+            penalty = parametros.get("penalty", "l2")
+            dual = parametros.get("dual", False)
+            tol = parametros.get("tol", "1e-4")
+            C = parametros.get("c", 1)
+            fit_intercept = parametros.get("fit_intercept", True)
+            intercept_scaling = parametros.get("intercept_scaling", 1)
+            class_weight = parametros.get("class_weight", None)
+            random_state = parametros.get("random_state", None)
+            solver = parametros.get("solver", "lbfgs")
+            max_inter = parametros.get("max_inter", 100)
+            multi_class = parametros.get("multi_class", "auto")
+            verbose = parametros.get("verbose", 0)
+            warm_start = parametros.get("warm_start", False)
+            n_jobs = parametros.get("n_jobs", None)
+            l1_ratio = parametros.get("l1_ratio", None)
+
+            log_reg = LogisticRegression(penalty, dual, tol, C, fit_intercept, intercept_scaling, class_weight, random_state, solver, max_inter, multi_class, verbose, warm_start, l1_ratio)
+
+        elif metodo == "linearRegression":
+
+            fit_intercept = parametros.get("fit_intercept", True)
+            copy_X = parametros.get("copy_X", True)
+            n_jobs = parametros.get("n_jobs", None)
+            positive = parametros.get("positive", False)
+
+            reg = LinearRegression(fit_intercept, copy_X, n_jobs, positive)
+
+        elif metodo == "decisionTreeRegressor":
+
+            criterion = parametros.get("criterion", "squared_error")
+            splitter = parametros.get("splitter", "best")
+            max_depth = parametros.get("max_depth", None)
+            min_samples_split = parametros.get("min_samples_leaf", 2)
+            min_samples_leaf = parametros.get("min_samples_leaf", 1)
+            min_weight_fraction_leaf = parametros.get("min_weight_fraction_leaf", 1)
+            max_features = parametros.get("max_features", None)
+            random_state = parametros.get("random_state", None)
+            max_leaf_nodes = parametros.get("max_leaf_nodes", None)
+            min_impurity_decrease = parametros.get("min_impurity_decrease", 0.0)
+            ccp_alpha = parametros.get("ccp_alpha", 0.0)
+            monotonic_cst = parametros.get("monotonic_cst", None)
+
+            tree_reg = DecisionTreeRegressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst)
+
+        elif metodo == "randomForestRegressor":
+            print("randomForestRegressor")
+        elif metodo == "gridSearch":
+            print("gridSearch")
+
+
 
         diccionario = {
             "@context":{
