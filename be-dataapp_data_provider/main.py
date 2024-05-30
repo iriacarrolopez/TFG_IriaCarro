@@ -405,7 +405,7 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
             n_jobs = parametros.get("n_jobs", None)
             positive = parametros.get("positive", False)
 
-            reg = LinearRegression(fit_intercept, copy_X, n_jobs, positive)
+            resultado = LinearRegression(fit_intercept, copy_X, n_jobs, positive)
 
         elif metodo == "decisionTreeRegressor":
 
@@ -422,14 +422,45 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
             ccp_alpha = parametros.get("ccp_alpha", 0.0)
             monotonic_cst = parametros.get("monotonic_cst", None)
 
-            tree_reg = DecisionTreeRegressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst)
+            resultado = DecisionTreeRegressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst)
 
         elif metodo == "randomForestRegressor":
-            print("randomForestRegressor")
+
+            n_estimators = parametros.get("n_estimators", 100)
+            criterion = parametros.get("criterion", "squared_error")
+            max_depth = parametros.get("max_depth", None)
+            min_samples_split = parametros.get("min_samples_split", 2)
+            min_samples_leaf = parametros.get("min_samples_leaf", 1)
+            min_weight_fraction_leaf = parametros.get("min_weight_fraction_leaf", 0.0)
+            max_features = parametros.get("max_features", 1.0)
+            max_leaf_nodes = parametros.get("max_leaf_nodes", None)
+            min_impurity_decrease = parametros.get("min_impurity_decrease", 0.0)
+            bootstrap = parametros.get("bootstrap", True)
+            oob_score = parametros.get("oob_score", False)
+            n_jobs = parametros.get("n_jobs", None)
+            random_state = parametros.get("random_state", None)
+            verbose = parametros.get("verbose", 0)
+            warm_start = parametros.get("warm_start", False)
+            ccp_alpha = parametros.get("ccp_alpha", 0.0)
+            max_samples = parametros.get("max_samples", None)
+            monotonic_cst = parametros.get("monotonic_cst", None)
+
+            resultado = RandomForestRegressor(n_estimators, criterion, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, max_leaf_nodes, min_impurity_decrease, bootstrap, oob_score, n_jobs, random_state, verbose, warm_start, ccp_alpha, max_samples, monotonic_cst)
+
         elif metodo == "gridSearch":
-            print("gridSearch")
+            
+            estimator = parametros.get("estimator", None) # DUDA!!!!!!!!!!!!!!
+            param_grid = parametros.get("param_grid", None) # DUDA!!!!!!!!!!!!!!
+            scoring = parametros.get("scoring", None)
+            n_jobs = parametros.get("n_jobs", None)
+            refit = parametros.get("refit", True)
+            cv = parametros.get("cv", None)
+            verbose = parametros.get("verbose", 0)
+            pre_dispatch = parametros.get("pre_dispatch", 2*n_jobs)
+            error_score = parametros.get("error_score", np.nan)
+            return_train_score = parametros.get("return_train_score", False)
 
-
+            resultado = GridSearchCV(estimator, param_grid, scoring, n_jobs, refit, cv, verbose, pre_dispatch, error_score, return_train_score)
 
         diccionario = {
             "@context":{
@@ -476,13 +507,13 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
 
         payload_header = '''Content-Type: application/ld+json
 Content-Transfer-Encoding: 8bit
-Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n" 
+Content-Length: ''' + str(len(resultado.encode('utf-8'))) + "\n\n" 
 
         # Create a multipart encoder
         encoder = MultipartEncoder(
             fields={
                 'header': multipart_header + str_header,
-                'payload':  payload_header + text_bytes
+                'payload':  payload_header + resultado
             }
         )
 
