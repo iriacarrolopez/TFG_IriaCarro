@@ -12,54 +12,10 @@ from analitica import *
 
 app = FastAPI()
 
-csv_file_path = "C:/Users/IRIA/Desktop/true-connector/be-dataapp_data_provider/housing.csv"
+csv_file_path = "/source/housing.csv"
 
-# @app.get("/logisticRegression")
-# async def logistic_regression():
-
-#     X_train, y_train, test = preprocess_data(csv_file_path)
-    
-#     log_reg = logistic_regression_california_housing(X_train, y_train, max_iter=100)
-
-#     return {"Logistic regression: ": log_reg}
-
-# @app.get("/linearRegression")
-# async def linear_regression():
-#     X_train, y_train, test = preprocess_data(csv_file_path)
-
-#     reg, error = train_linear_regression_and_evaluate(X_train, y_train)
-
-#     return {"reg": reg, "error": error}
-
-# @app.get("/decisionTreeRegressor")
-# async def decision_tree_regressor():
-#     X_train, y_train, test = preprocess_data(csv_file_path)
-
-#     return train_and_evaluate_models(X_train, y_train, cv=10)
-
-# @app.get("/randomForestRegressor")
-# async def random_forest_regressor():
-#     X_train, y_train, test = preprocess_data(csv_file_path)
-
-#     forest_reg, forest_rmse = train_random_forest_and_evaluate(X_train, y_train, cv=10)
-
-#     return {"Forest reg": forest_reg, "Forest_rmse": forest_rmse}
-
-# @app.get("/gridSearch")
-# async def grid_search():
-#     # Llamar a la función para preparar los datos
-#     X_train, y_train, test = preprocess_data(csv_file_path)
-    
-#     # Llamar a la función para entrenar el modelo
-#     best_params, best_model = preprocess_pipeline(X_train, y_train)
-
-#     return {"best_params": best_params, "best_model": str(best_model)}
-
-# @app.get("/proxy")
-# def proxy(request: Request):
-#     print(request)
-#     return {"Hello": "World"}
-
+X_train, y_train, test = preprocess_data(csv_file_path)
+processed_X_train = preprocess_pipeline(X_train)
 
 @app.post("/data")
 async def upload_text(header: str = Form(...), payload: str = Form(None)):
@@ -67,14 +23,6 @@ async def upload_text(header: str = Form(...), payload: str = Form(None)):
     mensaje = json.loads(header)
 
     print(mensaje)
-
-    print("ID")
-
-    #print(mensaje["ids:requestedElement"]["@id"])
-
-    print(mensaje.keys())
-
-    print("PAYLOAD")
 
     tipo_mensaje = mensaje["@type"]
 
@@ -100,18 +48,6 @@ async def upload_text(header: str = Form(...), payload: str = Form(None)):
         
         
         respuesta_ecc = respuesta.json()
-
-        print("RESPUESTA:")
-
-        print(respuesta_ecc)
-
-        # print("ID MENSAJE:")
-
-        # print(mensaje["@id"])
-
-        # print("ID RESPUESTA ECC:")
-
-        # print(respuesta_ecc["@id"])
 
         text_bytes = json.dumps(respuesta_ecc)
 
@@ -148,10 +84,6 @@ async def upload_text(header: str = Form(...), payload: str = Form(None)):
                 mensaje["ids:issuerConnector"]
             ]
         }
-
-        print("DICCIONARIO")
-
-        print(diccionario)
         
         str_header = json.dumps(diccionario)
 
@@ -171,39 +103,21 @@ Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n"
             }
         )
 
-        #print(encoder.to_string()) 
-
         # Create the response with the multipart data
         response = Response(content=encoder.to_string(), media_type=encoder.content_type)
-
-        # print(response)
         
         return response
     
     elif tipo_mensaje == "ids:ContractRequestMessage":
 
-        print("PAYLOAD")
-
-        print(json.loads(payload))
-
         str_payload = json.loads(payload)
-
-        print("ID PAYLOAD")
-
-        print(str_payload["@id"])
 
         url = "https://ecc-provider:8449/api/contractOffer/"
         headers = {'contractOffer': str_payload["@id"]}
 
         respuesta = requests.get(url, headers=headers, verify=False, auth=basic)
-        
-        #respuesta = requests.get("https://ecc-provider:8449/api/contractOffer/", verify=False, auth=basic)
 
         respuesta_ecc = respuesta.json()
-
-        print("RESPUESTA ECC:")
-        
-        print(respuesta_ecc)
 
         text_bytes = json.dumps(respuesta_ecc)
 
@@ -267,28 +181,11 @@ Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n"
     
     elif tipo_mensaje == "ids:ContractAgreementMessage":
 
-        print("PAYLOAD")
-
-        print(json.loads(payload))
-
         str_payload = json.loads(payload)
-
-        print("ID PAYLOAD")
-
-        print(str_payload["@id"])
-
-        # url = "https://ecc-provider:8449/api/contractOffer/"
-        # headers = {'contractOffer': str_payload["@id"]}
-
-        # respuesta = requests.get(url, headers=headers, verify=False, auth=basic)
         
         respuesta = requests.get("https://ecc-provider:8449/", verify=False)
 
         respuesta_ecc = respuesta.json()
-
-        print("RESPUESTA ECC:")
-        
-        print(respuesta_ecc)
 
         text_bytes = json.dumps(respuesta_ecc)
 
@@ -328,15 +225,13 @@ Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n"
             }
         }
 
+        respuesta_ecc["ids:consumer"] = mensaje["ids:issuerConnector"]
+
         str_header = json.dumps(diccionario)
 
         multipart_header = '''Content-Type: application/ld+json
 Content-Transfer-Encoding: 8bit
 Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
-
-#         payload_header = '''Content-Type: application/ld+json
-# Content-Transfer-Encoding: 8bit
-# Content-Length: ''' + str(len(text_bytes.encode('utf-8'))) + "\n\n" 
 
         # Create a multipart encoder
         encoder = MultipartEncoder(
@@ -347,8 +242,6 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
 
         response = Response(content=encoder.to_string(), media_type=encoder.content_type)
 
-        print(response.body)
-
         return response
     
     elif tipo_mensaje == "ids:ArtifactRequestMessage":
@@ -357,16 +250,12 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
 
         respuesta_ecc = respuesta.json()
 
-        print("RESPUESTA ECC:")
-        
-        print(respuesta_ecc)
-
         text_bytes = json.dumps(respuesta_ecc)
 
         id_aleatorio = str(uuid.uuid4())
 
         url = mensaje["ids:requestedArtifact"]["@id"]
-
+        print(url)
         # Parsear la URL
         parsed_url = urlparse(url)
 
@@ -377,6 +266,13 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
         # Parsear los parámetros de la query string en un diccionario
         query_params = parse_qs(parsed_url.query)
         parametros = {key: value[0] for key, value in query_params.items()}
+
+        resultado_logisticRegression = None
+        resultado_linearRegression = None
+        resultado_decissionTreeRegressor = None
+        resultado_randomForestRegressor = None
+
+        print(metodo)
 
         if metodo == "logisticRegression":
 
@@ -396,7 +292,12 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
             n_jobs = parametros.get("n_jobs", None)
             l1_ratio = parametros.get("l1_ratio", None)
 
-            log_reg = LogisticRegression(penalty, dual, tol, C, fit_intercept, intercept_scaling, class_weight, random_state, solver, max_inter, multi_class, verbose, warm_start, l1_ratio)
+            log_reg = logistic_regression(penalty, dual, tol, C, fit_intercept, intercept_scaling, class_weight, random_state, solver, max_inter, multi_class, verbose, warm_start, l1_ratio)
+
+            resultado_logisticRegression = {
+                "METRIC": "Logistic Regression",
+                "VALUE": log_reg
+            }
 
         elif metodo == "linearRegression":
 
@@ -405,7 +306,13 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
             n_jobs = parametros.get("n_jobs", None)
             positive = parametros.get("positive", False)
 
-            resultado = LinearRegression(fit_intercept, copy_X, n_jobs, positive)
+            reg, error = linear_regression(fit_intercept, copy_X, n_jobs, positive)
+
+            resultado_linearRegression = {
+                "METRIC": "Linear Regression",
+                "VALUE": reg,
+                "ERROR": error
+            }
 
         elif metodo == "decisionTreeRegressor":
 
@@ -422,7 +329,13 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
             ccp_alpha = parametros.get("ccp_alpha", 0.0)
             monotonic_cst = parametros.get("monotonic_cst", None)
 
-            resultado = DecisionTreeRegressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst)
+            tree_error, tree_rmse = decission_tree_regressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst)
+
+            resultado_decissionTreeRegressor = {
+                "METRIC": "Decission Tree Regressor",
+                "ERROR": tree_error,
+                "RMSE ERROR": tree_rmse
+            }
 
         elif metodo == "randomForestRegressor":
 
@@ -445,22 +358,12 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
             max_samples = parametros.get("max_samples", None)
             monotonic_cst = parametros.get("monotonic_cst", None)
 
-            resultado = RandomForestRegressor(n_estimators, criterion, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, max_leaf_nodes, min_impurity_decrease, bootstrap, oob_score, n_jobs, random_state, verbose, warm_start, ccp_alpha, max_samples, monotonic_cst)
+            forest_rmse = random_forest_regressor(n_estimators, criterion, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, max_leaf_nodes, min_impurity_decrease, bootstrap, oob_score, n_jobs, random_state, verbose, warm_start, ccp_alpha, max_samples, monotonic_cst)
 
-        elif metodo == "gridSearch":
-            
-            estimator = parametros.get("estimator", None) # DUDA!!!!!!!!!!!!!!
-            param_grid = parametros.get("param_grid", None) # DUDA!!!!!!!!!!!!!!
-            scoring = parametros.get("scoring", None)
-            n_jobs = parametros.get("n_jobs", None)
-            refit = parametros.get("refit", True)
-            cv = parametros.get("cv", None)
-            verbose = parametros.get("verbose", 0)
-            pre_dispatch = parametros.get("pre_dispatch", 2*n_jobs)
-            error_score = parametros.get("error_score", np.nan)
-            return_train_score = parametros.get("return_train_score", False)
-
-            resultado = GridSearchCV(estimator, param_grid, scoring, n_jobs, refit, cv, verbose, pre_dispatch, error_score, return_train_score)
+            resultado_randomForestRegressor = {
+                "METRIC": "Random Forest Regressor",
+                "RMSE ERROR": forest_rmse
+            }
 
         diccionario = {
             "@context":{
@@ -500,6 +403,19 @@ Content-Length: ''' + str(len(str_header.encode('utf-8'))) + "\n\n"
         }
 
         str_header = json.dumps(diccionario)
+
+        print("RESULTADO")
+
+        resultados_lista = [
+            resultado_linearRegression,
+            resultado_logisticRegression,
+            resultado_decissionTreeRegressor,
+            resultado_randomForestRegressor
+            ]
+        
+        resultado = json.dumps(resultados_lista, indent=4)
+
+        print(resultado)
 
         multipart_header = '''Content-Type: application/ld+json
 Content-Transfer-Encoding: 8bit

@@ -298,7 +298,7 @@ services:
     expose:
       - "9000"
     environment:
-      - "JDK_JAVA_OPTIONS=-Xmx512m"
+      - "JDK_JAVA_OPTIONS=-Xmx512m -Dloggging.level.root=DEBUG"
       - "SPRING_PROFILES_ACTIVE=docker"
       - DATA_APP_MULTIPART=${CONSUMER_MULTIPART_EDGE}
       - KEYSTORE_NAME=${KEYSTORE_NAME}

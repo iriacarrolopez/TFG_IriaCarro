@@ -1,8 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 #-----------------
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.impute import SimpleImputer
@@ -22,7 +20,7 @@ from sklearn.ensemble import RandomForestRegressor
 # GRID SEARCH CV
 from sklearn.model_selection import GridSearchCV
 #-----------------
-csv_file_path = "C:/Users/IRIA/Desktop/true-connector/be-dataapp_data_provider/housing.csv"
+csv_file_path = "/source/housing.csv"
 
 df = pd.read_csv(csv_file_path)
 
@@ -103,9 +101,9 @@ def preprocess_pipeline(X_train):
 
     return full_pipeline.fit_transform(X_train)
 
-# Función para entrenar y evaluar un modelo de regresión lineal
-def train_linear_regression_and_evaluate(X_train, y_train):
-    reg = LinearRegression()
+# REGRESIÓN LINEAL
+def linear_regression(fit_intercept, copy_X, n_jobs, positive):
+    reg = LinearRegression(fit_intercept, copy_X, n_jobs, positive)
     reg.fit(X_train, y_train)
     y_pred = reg.predict(X_train)
     error = np.mean((y_pred - y_train) ** 2)
@@ -115,63 +113,44 @@ X_train, y_train, test = preprocess_data(csv_file_path)
 processed_X_train = preprocess_pipeline(X_train)
 
 # REGRESIÓN LOGISTICA
-def logistic_regression_california_housing(X_train, y_train, max_iter=100):
+def logistic_regression(penalty, dual, tol, C, fit_intercept, intercept_scaling, class_weight, random_state, solver, max_inter, multi_class, verbose, warm_start, l1_ratio):
     # Entrenamiento del modelo de regresión logística
-    log_reg = LogisticRegression(max_iter=max_iter)
+    log_reg = LogisticRegression(penalty, dual, tol, C, fit_intercept, intercept_scaling, class_weight, random_state, solver, max_inter, multi_class, verbose, warm_start, l1_ratio)
     log_reg.fit(X_train, y_train)
     
     return log_reg
 
-# REGRESIÓN LINEAL
-def train_linear_regression_and_evaluate(X_train, y_train):
-    # Entrenamiento del modelo de regresión lineal
-    reg = LinearRegression()
-    reg.fit(X_train, y_train)
-    
-    # Predicciones
-    predictions = reg.predict(X_train)
-    
-    # Cálculo del error RMSE
-    error = np.sqrt(mean_squared_error(y_train, predictions))
-    
-    return reg, error
-
 # DECISION TREE REGRESSOR
-def train_and_evaluate_models(X_train, y_train, cv=10):
+def decission_tree_regressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst):
     # Entrenamiento del modelo DecisionTreeRegressor
-    tree_reg = DecisionTreeRegressor()
+    tree_reg = DecisionTreeRegressor(criterion, splitter, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, random_state, max_leaf_nodes, min_impurity_decrease, ccp_alpha, monotonic_cst)
     tree_reg.fit(X_train, y_train)
     
     # Predicciones del árbol de decisiones
     tree_predictions = tree_reg.predict(X_train)
     tree_error = mean_squared_error(y_train, tree_predictions)
-    print("Error cuadrático medio del árbol de decisión:", tree_error)
     
     # Validación cruzada para DecisionTreeRegressor
-    tree_scores = cross_val_score(tree_reg, X_train, y_train, scoring='neg_mean_squared_error', cv=cv)
+    tree_scores = cross_val_score(tree_reg, X_train, y_train, scoring='neg_mean_squared_error')
     tree_rmse_scores = np.sqrt(-tree_scores)
-    print("Error RMSE promedio del árbol de decisión:", tree_rmse_scores.mean())
-    
-    # Entrenamiento del modelo LinearRegression
-    # lin_reg = LinearRegression()
-    # lin_reg_scores = cross_val_score(lin_reg, X_train, y_train, scoring='neg_mean_squared_error', cv=cv)
-    # lin_rmse_scores = np.sqrt(-lin_reg_scores)
-    # print("Error RMSE promedio de la regresión lineal:", lin_rmse_scores.mean())
+    tree_rmse = tree_rmse_scores.mean()
+
+    return tree_error, tree_rmse
     
 
 # RANDOM FOREST REGRESSOR
-def train_random_forest_and_evaluate(X_train, y_train, cv=10):
+def random_forest_regressor(n_estimators, criterion, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, max_leaf_nodes, min_impurity_decrease, bootstrap, oob_score, n_jobs, random_state, verbose, warm_start, ccp_alpha, max_samples, monotonic_cst):
     # Entrenamiento del modelo de Random Forest Regressor
-    forest_reg = RandomForestRegressor()
+    forest_reg = RandomForestRegressor(n_estimators, criterion, max_depth, min_samples_split, min_samples_leaf, min_weight_fraction_leaf, max_features, max_leaf_nodes, min_impurity_decrease, bootstrap, oob_score, n_jobs, random_state, verbose, warm_start, ccp_alpha, max_samples, monotonic_cst)
     forest_reg.fit(X_train, y_train)
     
     # Validación cruzada para calcular los puntajes de error
-    forest_reg_scores = cross_val_score(forest_reg, X_train, y_train, scoring='neg_mean_squared_error', cv=cv)
+    forest_reg_scores = cross_val_score(forest_reg, X_train, y_train, scoring='neg_mean_squared_error')
     
     # Cálculo del error RMSE promedio
     forest_rmse = np.sqrt(-forest_reg_scores.mean())
     
-    return forest_reg, forest_rmse
+    return forest_rmse
 
 
 # GRID SEARCH CV
